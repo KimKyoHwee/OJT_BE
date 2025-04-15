@@ -1,6 +1,6 @@
 spring:
   application:
-    name: batch-project
+    name: ojt_BE
   batch:
     job:
       enabled: false
@@ -10,12 +10,12 @@ spring:
 
   datasource-meta:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://${DB_SOURCE}:3306/metadb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    jdbc-url: jdbc:mysql://${DB_SOURCE}:3306/ojt_metadb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
     username: ${DB_ID}
     password: ${DB_PW}
 
   datasource-data:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://localhost:3306/datadb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    jdbc-url: jdbc:mysql://localhost:3306/ojt_datadb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
     username: ${DB_ID}
     password: ${DB_PW}
