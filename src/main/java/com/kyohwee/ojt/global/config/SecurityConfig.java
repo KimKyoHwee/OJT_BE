@@ -59,6 +59,7 @@ public class SecurityConfig {
                                             configuration.setAllowedOrigins(
                                                     Arrays.asList(
                                                             "https://localhost:3000",
+                                                            "http://localhost:3000",
                                                             "http://localhost:8080"));
 
                                             configuration.setAllowedMethods(

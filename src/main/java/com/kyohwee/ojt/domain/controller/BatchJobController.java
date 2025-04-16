@@ -1,5 +1,6 @@
 package com.kyohwee.ojt.domain.controller;
 
+import com.kyohwee.ojt.domain.dto.BatchJobListDto;
 import com.kyohwee.ojt.domain.dto.BatchJobRequestDto;
 import com.kyohwee.ojt.domain.dto.BatchJobResponseDto;
 import com.kyohwee.ojt.domain.entity.BatchJob;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static com.kyohwee.ojt.global.uri.RequestUri.BATCH_JOB_URI;
 
@@ -37,5 +40,13 @@ public class BatchJobController {
     public ResponseEntity<ApiResponse<BatchJobResponseDto>> createBatchJob(@RequestBody BatchJobRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.onSuccessCREATED(batchJobService.createBatchJob(request)));
+    }
+
+    //사용자의 BatchJob을 조회하는 API
+    @GetMapping("/{userId}")
+    @Operation(summary = "사용자의 배치 작업 조회", description = "특정 사용자가 생성한 배치 작업들을 조회합니다.")
+    public ResponseEntity<ApiResponse<List<BatchJobListDto>>> getBatchJobsByUserId(@PathVariable Long userId) {
+        List<BatchJobListDto> batchJobs = batchJobService.getBatchJobsByUserId(userId);
+        return ResponseEntity.ok(ApiResponse.onSuccess(HttpStatus.OK, "사용자의 배치 작업 조회 성공", batchJobs));
     }
 }
