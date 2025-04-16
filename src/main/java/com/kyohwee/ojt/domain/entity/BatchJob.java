@@ -1,8 +1,8 @@
 package com.kyohwee.ojt.domain.entity;
 
+import com.kyohwee.ojt.domain.dto.BatchJobRequestDto;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BatchJob {
 
     @Id
@@ -27,14 +30,30 @@ public class BatchJob {
     @Column(nullable = false, length = 500)
     private String endpointUrl; // API 요청을 보낼 엔드포인트 URL
 
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now(); // 생성 시간
 
+    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now(); // 수정 시간
 
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now(); // 수정 시 updatedAt 갱신
+    }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    public static BatchJob fromDto(BatchJobRequestDto dto, User user) {
+        return BatchJob.builder()
+                .user(user)
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .endpointUrl(dto.getEndpointUrl())
+                .build();
+
     }
 }
