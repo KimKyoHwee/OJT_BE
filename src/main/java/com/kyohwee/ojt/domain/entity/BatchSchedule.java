@@ -27,9 +27,9 @@ public class BatchSchedule {
     @Column(nullable = false)
     private LocalDateTime scheduleTime;
 
-    // 몇 시간마다 반복할지 (null이면 단발성 실행)
+    // 몇 분마다 반복할지 (null이면 단발성 실행)
     @Column
-    private Integer repeatIntervalHour;
+    private Integer repeatIntervalMinutes;
 
     // 마지막으로 실행된 시각
     @Column
@@ -59,11 +59,11 @@ public class BatchSchedule {
      * 다음 실행 시간 갱신 (repeatIntervalHour 있을 경우)
      */
     public void updateNextExecutionTime() {
-        if (this.repeatIntervalHour != null) {
+        if (this.repeatIntervalMinutes != null) {
             this.nextExecutionTime = (this.nextExecutionTime != null ? this.nextExecutionTime : this.scheduleTime)
-                    .plusHours(this.repeatIntervalHour);
+                    .plusMinutes(this.repeatIntervalMinutes);
         } else {
-            this.isActive = false; // 반복 없음 → 비활성화
+            this.isActive = false;
         }
     }
 }
