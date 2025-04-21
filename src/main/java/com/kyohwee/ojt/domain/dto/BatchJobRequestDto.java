@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Builder
@@ -13,6 +15,10 @@ public class BatchJobRequestDto {
     private String description;
     private String endpointUrl;
     private Long userId;
+
+    private LocalDateTime scheduleTime;
+    private Integer repeatIntervalMinutes;
+
 
 
 }
