@@ -16,6 +16,8 @@ public class BatchJobRequestDto {
     private String endpointUrl;
     private Long userId;
 
+    private String cronExpression;
+
     private LocalDateTime scheduleTime;
     private Integer repeatIntervalMinutes;
 

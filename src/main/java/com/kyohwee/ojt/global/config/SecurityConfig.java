@@ -87,15 +87,22 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
+                                                "/v3/api-docs.yaml",     // ✅ 이걸로 수정해야 Redoc 정상 동작
                                                 "/swagger-ui/**",
                                                 "/swagger-resources/**",
+                                                "/redoc.html",
+                                                "/webjars/**",
+                                                "/favicon.ico",
                                                 "/health-check",
-                                                "/",
                                                 "/auth/reissue/**",
                                                 "/security-check",
-                                                "/api/**",
-                                                "/reissue")
-                                        .permitAll()
+                                                "/reissue",
+                                                "/docs/**",
+                                                "/",
+                                                "/api/**"
+                                        ).permitAll()
+
+
                                         /*
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/admin/issue")

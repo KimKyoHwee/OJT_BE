@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BatchScheduleRepository extends JpaRepository<BatchSchedule, Long> {
-    @Query("SELECT s FROM BatchSchedule s WHERE s.isActive = true AND s.nextExecutionTime <= :now")
+    @Query("SELECT s FROM BatchSchedule s JOIN FETCH s.batchJob WHERE s.isActive = true AND s.nextExecutionTime <= :now")
     List<BatchSchedule> findAllToExecute(@Param("now") LocalDateTime now);
+
 }

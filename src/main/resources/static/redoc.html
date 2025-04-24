@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redoc Manual Init</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+</head>
+<body>
+<div id="redoc-container"></div>
+<script>
+    Redoc.init('/v3/api-docs.yaml', {}, document.getElementById('redoc-container'));
+</script>
+</body>
+</html>
