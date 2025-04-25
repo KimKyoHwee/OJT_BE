@@ -15,7 +15,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BatchSchedulerService {
+public class PollingSchedulerService {
 
     private final BatchScheduleRepository scheduleRepository;
     private final BatchJobExecutor jobExecutor;
@@ -34,7 +34,7 @@ public class BatchSchedulerService {
             jobExecutor.execute(job);
 
             // 2. 마지막 실행 시각 업데이트
-            schedule.setLastExecutedAt(now);
+            //schedule.setLastExecutedAt(now);
 
             // 3. 반복 주기 있는 경우 → 다음 실행 시간 계산
             if (schedule.getRepeatIntervalMinutes() != null) {

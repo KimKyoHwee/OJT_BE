@@ -7,20 +7,15 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@Builder
+@Getter @Setter @Builder
 public class BatchJobRequestDto {
     private String name;
     private String description;
     private String endpointUrl;
-    private Long userId;
+    private Long   userId;
 
-    private String cronExpression;
-
-    private LocalDateTime scheduleTime;
-    private Integer repeatIntervalMinutes;
-
-
-
+    // 스케줄 정보
+    private LocalDateTime startTime;
+    private String        cronExpression;
+    private Integer       repeatIntervalMinutes;
 }

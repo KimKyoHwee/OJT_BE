@@ -12,4 +12,7 @@ public interface BatchScheduleRepository extends JpaRepository<BatchSchedule, Lo
     @Query("SELECT s FROM BatchSchedule s JOIN FETCH s.batchJob WHERE s.isActive = true AND s.nextExecutionTime <= :now")
     List<BatchSchedule> findAllToExecute(@Param("now") LocalDateTime now);
 
+    List<BatchSchedule> findAllByIsActiveTrue();
+
+
 }

@@ -21,9 +21,6 @@ public class BatchJob {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 기본 키
 
-    @Column(nullable = false, length = 100)
-    private String cronExpression;
-
     @Column(nullable = false, length = 255)
     private String name; // 배치 작업 이름
 
@@ -56,7 +53,6 @@ public class BatchJob {
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .endpointUrl(dto.getEndpointUrl())
-                .cronExpression(dto.getCronExpression())
                 .build();
 
     }

@@ -9,6 +9,7 @@ import com.kyohwee.ojt.domain.service.BatchJobService;
 import com.kyohwee.ojt.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.quartz.SchedulerException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,7 @@ public class BatchJobController {
                     responseCode = "500",
                     description = "서버 에러")
     })
-    public ResponseEntity<ApiResponse<BatchJobResponseDto>> createBatchJob(@RequestBody BatchJobRequestDto request) {
+    public ResponseEntity<ApiResponse<BatchJobResponseDto>> createBatchJob(@RequestBody BatchJobRequestDto request) throws SchedulerException {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.onSuccessCREATED(batchJobService.createBatchJob(request)));
     }
