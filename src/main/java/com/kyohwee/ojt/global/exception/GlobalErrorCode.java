@@ -15,7 +15,11 @@ public enum GlobalErrorCode {
     // 유저 관련
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "LOGIN_401", "아이디 또는 비밀번호가 잘못되었습니다."),
     USER_EXIST(HttpStatus.CONFLICT, "USER_409", "중복된 유저가 존재합니다."), // 추가된 에러 코드
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "사용자를 찾을 수 없습니다.") // 추가된 에러 코드
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_404", "사용자를 찾을 수 없습니다."), // 추가된 에러 코드
+
+    BATCH_JOB_NOT_FOUND(    HttpStatus.NOT_FOUND,        "BATCH_404",   "해당 배치 작업을 찾을 수 없습니다."),        // :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+    SCHEDULE_NOT_FOUND(     HttpStatus.NOT_FOUND,        "SCHED_404",   "해당 스케줄을 찾을 수 없습니다."),            // :contentReference[oaicite:2]{index=2}&#8203;:contentReference[oaicite:3]{index=3}
+    SCHEDULER_REGISTRATION_ERROR( HttpStatus.INTERNAL_SERVER_ERROR, "SCHED_500", "스케줄 등록 중 오류가 발생했습니다."), // :contentReference[oaicite:4]{index=4}&#8203;:contentReference[oaicite:5]{index=5}
 
     ;
     private final HttpStatus httpStatus;

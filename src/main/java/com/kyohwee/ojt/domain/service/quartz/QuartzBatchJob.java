@@ -17,7 +17,7 @@ public class QuartzBatchJob extends QuartzJobBean {
     @Override
     protected void executeInternal(JobExecutionContext context) {
         Long scheduleId = context.getMergedJobDataMap().getLong("scheduleId");
-        BatchSchedule schedule = scheduleRepo.findById(scheduleId)
+        BatchSchedule schedule = scheduleRepo.findWithBatchJobById(scheduleId)
                 .orElseThrow(() -> new IllegalStateException("No schedule " + scheduleId));
         // 1) 실제 작업 실행
         jobExecutor.execute(schedule.getBatchJob());

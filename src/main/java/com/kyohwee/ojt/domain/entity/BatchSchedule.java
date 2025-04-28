@@ -15,7 +15,7 @@ public class BatchSchedule {
     @Id @GeneratedValue
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="batch_job_id", nullable=false)
     private BatchJob batchJob;
 

@@ -20,7 +20,7 @@ public class PollingSchedulerService {
     private final BatchScheduleRepository scheduleRepository;
     private final BatchJobExecutor jobExecutor;
 
-    @Scheduled(fixedRate = 60000) // 1분마다 polling
+    //@Scheduled(fixedRate = 60000) // 1분마다 polling
     public void pollAndExecuteSchedules() {
         LocalDateTime now = LocalDateTime.now();
 

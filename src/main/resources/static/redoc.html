@@ -1,13 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <title>Redoc Manual Init</title>
     <meta charset="UTF-8" />
+    <title>BIZ API 문서</title>
     <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet">
     <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+
+        #redoc-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 24px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        #redoc-header img {
+            height: 36px;
+            margin-right: 12px;
+        }
+
+        #redoc-header h1 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+        }
+
+        .menu-content {
+            background-color: #ffffff !important;
+        }
+
+        .menu-content .active {
+            color: #0097d8 !important;
+        }
+
+        h1, h2, h3 {
+            color: #0097d8 !important;
+        }
+
+        code {
+            background-color: #f4f4f4 !important;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .redoc-wrap {
+            margin-top: 60px;
+        }
+
+        /* 모든 이미지 태그에 favicon.ico 적용 */
+        img {
+            content: url("/favicon.ico");
+        }
+    </style>
 </head>
 <body>
-<div id="redoc-container"></div>
+<!-- 로컬 아이콘 기반 로고 -->
+<div id="redoc-header">
+    <img src="/favicon.ico" alt="OJT 로고" height="36" />
+    <h1>BIZ API 문서</h1>
+</div>
+
+<!-- Redoc 본문 -->
+<div id="redoc-container" class="redoc-wrap"></div>
+
 <script>
     Redoc.init('/v3/api-docs.yaml', {}, document.getElementById('redoc-container'));
 </script>
