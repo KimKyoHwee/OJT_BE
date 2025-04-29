@@ -19,7 +19,8 @@ public class BatchJobExecutor {
     private final RestTemplate restTemplate;
     private final BatchLogRepository logRepository;
 
-    public void execute(BatchJob job) {
+    public void
+    execute(BatchJob job) {
         BatchLog batchLog = new BatchLog();
         batchLog.setBatchJob(job);
         batchLog.setExecutedAt(LocalDateTime.now());
