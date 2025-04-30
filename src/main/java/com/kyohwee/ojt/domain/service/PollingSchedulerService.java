@@ -3,10 +3,10 @@ package com.kyohwee.ojt.domain.service;
 import com.kyohwee.ojt.domain.entity.BatchJob;
 import com.kyohwee.ojt.domain.entity.BatchSchedule;
 import com.kyohwee.ojt.domain.repository.BatchScheduleRepository;
+
 import com.kyohwee.ojt.global.batch.BatchJobExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

@@ -2,6 +2,7 @@ package com.kyohwee.ojt.domain.service.quartz;
 
 import com.kyohwee.ojt.domain.entity.BatchSchedule;
 import com.kyohwee.ojt.domain.repository.BatchScheduleRepository;
+import com.kyohwee.ojt.global.enums.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
@@ -17,14 +18,22 @@ import java.util.Date;
 @Slf4j
 public class QuartzSchedulerService implements SchedulerService {
     private final org.quartz.Scheduler quartz;
-    private final JobLauncher jobLauncher;
-    private final JobRegistry jobRegistry;
+    private final JobLauncher jobLauncher;     // Spring Batch 실행용
+    private final JobRegistry jobRegistry;     // Spring Batch Job 조회용
     private final BatchScheduleRepository scheduleRepo;
 
     @Override
     public void register(BatchSchedule schedule) throws SchedulerException {
+        // 0) 작업 타입에 따라 사용할 QuartzJobBean 클래스 결정
+        Class<? extends Job> jobClass;
+        if (schedule.getBatchJob().getJobType() == JobType.SPRING_BATCH) {
+            jobClass = QuartzBatchJob.class;
+        } else {
+            jobClass = QuartzRestJob.class;
+        }
+
         // 1) JobDetail 생성
-        JobDetail detail = JobBuilder.newJob(QuartzBatchJob.class)
+        JobDetail detail = JobBuilder.newJob(jobClass)
                 .withIdentity(jobKey(schedule))
                 .usingJobData("scheduleId", schedule.getId())
                 .build();
@@ -39,7 +48,10 @@ public class QuartzSchedulerService implements SchedulerService {
             quartz.deleteJob(detail.getKey());
         }
         quartz.scheduleJob(detail, trigger);
-        log.info("Registered scheduleId={} with trigger={}", schedule.getId(), trigger.getKey());
+        log.info("Registered scheduleId={} as {} with trigger={}",
+                schedule.getId(),
+                schedule.getBatchJob().getJobType(),
+                trigger.getKey());
     }
 
     private String jobKey(BatchSchedule s) {

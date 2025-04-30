@@ -19,3 +19,9 @@ spring:
     jdbc-url: jdbc:mysql://localhost:3306/ojt_datadb?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
     username: ${DB_ID}
     password: ${DB_PW}
+
+clova:
+  ocr:
+    url: https://naveropenapi.apigw.ntruss.com/vision-ocr/v1/ocr
+    client-id: YOUR_CLIENT_ID
+    client-secret: YOUR_CLIENT_SECRET

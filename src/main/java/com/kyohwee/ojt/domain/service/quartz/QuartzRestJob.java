@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class QuartzBatchJob extends QuartzJobBean {
+public class QuartzRestJob extends QuartzJobBean {
     private final BatchScheduleRepository scheduleRepo;
-    private final BatchJobExecutor jobExecutor;  // 이 클래스에 executeSpringBatch(...) 추가
+    private final BatchJobExecutor jobExecutor;  // 이 클래스의 execute()는 REST 호출
 
     @Override
     protected void executeInternal(JobExecutionContext context) {
@@ -23,9 +23,10 @@ public class QuartzBatchJob extends QuartzJobBean {
         BatchSchedule schedule = scheduleRepo.findWithBatchJobById(scheduleId)
                 .orElseThrow(() -> new IllegalStateException("No schedule " + scheduleId));
 
-        log.info("QuartzSpringBatchJob 실행 – Spring Batch 호출: scheduleId={}", scheduleId);
-        jobExecutor.executeSpringBatch(schedule.getBatchJob());  // Spring Batch JobLauncher 사용
+        log.info("QuartzRestJob 실행 – REST 호출: scheduleId={}", scheduleId);
+        jobExecutor.execute(schedule.getBatchJob());  // HTTP POST/GET 등
 
+        // 반복 스케줄인 경우만 nextExecutionTime 갱신
         if (schedule.getRepeatIntervalMinutes() != null) {
             schedule.updateNextExecutionTime();
             scheduleRepo.save(schedule);

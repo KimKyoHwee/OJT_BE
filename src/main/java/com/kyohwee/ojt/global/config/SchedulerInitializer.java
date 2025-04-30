@@ -1,4 +1,4 @@
-package com.kyohwee.ojt.global.batch;
+package com.kyohwee.ojt.global.config;
 
 import com.kyohwee.ojt.domain.repository.BatchScheduleRepository;
 import com.kyohwee.ojt.domain.service.quartz.SchedulerService;

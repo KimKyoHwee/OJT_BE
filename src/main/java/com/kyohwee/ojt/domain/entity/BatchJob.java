@@ -1,6 +1,7 @@
 package com.kyohwee.ojt.domain.entity;
 
 import com.kyohwee.ojt.domain.dto.BatchJobRequestDto;
+import com.kyohwee.ojt.global.enums.JobType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +17,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BatchJob {
+    /**
+     * REST 호출인지 SPRING_BATCH 실행인지 구분
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private JobType jobType;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,8 +54,11 @@ public class BatchJob {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+
+
     public static BatchJob fromDto(BatchJobRequestDto dto, User user) {
         return BatchJob.builder()
+                .jobType(dto.getJobType())
                 .user(user)
                 .name(dto.getName())
                 .description(dto.getDescription())

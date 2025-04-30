@@ -1,6 +1,7 @@
 package com.kyohwee.ojt.domain.dto;
 
 import com.kyohwee.ojt.domain.entity.BatchJob;
+import com.kyohwee.ojt.global.enums.JobType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,4 +19,8 @@ public class BatchJobRequestDto {
     private LocalDateTime startTime;
     private String        cronExpression;
     private Integer       repeatIntervalMinutes;
+
+    // API호출인지, JOB도는지 구분
+    private JobType jobType;
+
 }
