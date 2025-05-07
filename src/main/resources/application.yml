@@ -24,4 +24,8 @@ clova:
   ocr:
     url: https://naveropenapi.apigw.ntruss.com/vision-ocr/v1/ocr
     client-id: YOUR_CLIENT_ID
-    client-secret: YOUR_CLIENT_SECRET
+
+openapi:
+  business:
+    validate-url: ${OPENAPI_BUSINESS_VALIDATE-URL}
+    service-key: ${OPENAPI_BUSINESS_SERVICE-KEY}
