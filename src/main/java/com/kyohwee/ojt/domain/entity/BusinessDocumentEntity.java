@@ -52,6 +52,21 @@ public class BusinessDocumentEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // 생성자 추가
+    public BusinessDocumentEntity(User user, String imageUrl) {
+        this.user = user;
+        this.imageUrl = imageUrl;
+        this.ocrProcessed = false;
+        this.verified = false;
+        this.success = false;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+    
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();

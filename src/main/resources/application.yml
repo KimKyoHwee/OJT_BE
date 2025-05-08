@@ -20,12 +20,27 @@ spring:
     username: ${DB_ID}
     password: ${DB_PW}
 
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
+      region:
+        static: ap-northeast-2
+      s3:
+        bucket: ${S3_BUCKET_NAME}
+    servlet:
+      multipart:
+        max-file-size: 50MB
+        max-request-size: 50MB
+
 clova:
   ocr:
-    url: https://naveropenapi.apigw.ntruss.com/vision-ocr/v1/ocr
-    client-id: YOUR_CLIENT_ID
+    url: ${CLOVA_OCR_URL}
+    client-id: ${CLOVA_OCR_CLIENT_SECRET}
 
 openapi:
   business:
     validate-url: ${OPENAPI_BUSINESS_VALIDATE-URL}
     service-key: ${OPENAPI_BUSINESS_SERVICE-KEY}
+
