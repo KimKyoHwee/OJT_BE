@@ -2,7 +2,6 @@ package com.kyohwee.ojt.domain.service.ocr;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.kyohwee.ojt.domain.dto.ClovaOcrResponseDto;
-import com.kyohwee.ojt.domain.service.ocr.ClovaOcrService.OcrRequest.Image;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,40 +9,67 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Clova Document OCR v2 서비스 구현
+ */
 @Service
 @RequiredArgsConstructor
 public class ClovaOcrService {
 
     private final RestTemplate restTemplate;
 
-    /** application.yml 에 설정된 OCR 엔드포인트 (예: https://naveropenapi.apigw.ntruss.com/vision-ocr/v1/ocr) */
-    @Value("${clova.ocr.url}")
-    private String ocrUrl;
+    /** Document OCR v2 엔드포인트 URL (PDF/문서 지원) */
+    @Value("${clova.ocr.document-url}")
+    private String documentOcrUrl;
 
-    /** API Key Secret */
+    /** API Key ID (X-NCP-APIGW-API-KEY-ID) */
+    @Value("${clova.ocr.client-id}")
+    private String clientId;
+
+    /** API Key Secret (X-OCR-SECRET) */
     @Value("${clova.ocr.client-secret}")
     private String clientSecret;
 
     /**
-     * 외부 이미지 URL 한 개를 OCR API에 보내고, 전체 응답을 DTO로 반환한다.
+     * S3 URL에서 이미지를 다운로드 받아 Base64로 인코딩
      *
-     * @param imageUrl 이미지가 접근 가능한 public URL
-     * @return OCR API가 돌려준 full response
+     * @param imageUrl S3 등에서 접근 가능한 public URL
+     * @return Base64 인코딩 문자열
+     */
+    public String downloadImageAsBase64(String imageUrl) {
+        ResponseEntity<byte[]> resp = restTemplate.getForEntity(imageUrl, byte[].class);
+        byte[] imageBytes = resp.getBody();
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IllegalStateException("이미지 다운로드 실패: " + imageUrl);
+        }
+        return Base64.getEncoder().encodeToString(imageBytes);
+    }
+
+    /**
+     * Document OCR v2 API에 요청하여 전체 응답을 DTO로 반환
+     *
+     * @param imageUrl S3 등에서 접근 가능한 public URL
+     * @return Clova OCR 응답 DTO
      */
     public ClovaOcrResponseDto extractText(String imageUrl) {
-        // 1) 헤더 준비
+        // 1) 이미지 다운로드 및 Base64 인코딩
+        String base64 = downloadImageAsBase64(imageUrl);
+
+        // 2) 헤더 설정 (X-OCR-SECRET)
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-NCP-APIGW-API-KEY", clientSecret);
+        headers.set("X-OCR-SECRET", clientSecret);
 
-        // 2) 요청 바디 준비
-        Image img = new Image();
-        img.setUrl(imageUrl);
-        img.setFormat(detectFormat(imageUrl));   // ex) "jpg", "png"
+        // 3) 요청 바디 생성
+        OcrRequest.Image img = new OcrRequest.Image();
+        img.setFormat(detectFormat(imageUrl));
+        img.setName("img-" + UUID.randomUUID());
+        img.setData(base64);
 
         OcrRequest req = new OcrRequest();
         req.setRequestId(UUID.randomUUID().toString());
@@ -51,41 +77,47 @@ public class ClovaOcrService {
         req.setVersion("V2");
         req.setImages(Collections.singletonList(img));
 
-        HttpEntity<OcrRequest> httpEntity = new HttpEntity<>(req, headers);
+        HttpEntity<OcrRequest> entity = new HttpEntity<>(req, headers);
 
-        // 3) API 호출
-        ResponseEntity<ClovaOcrResponseDto> resp =
-                restTemplate.exchange(ocrUrl, HttpMethod.POST, httpEntity, ClovaOcrResponseDto.class);
-
+        // 4) Document OCR v2 호출
+        ResponseEntity<ClovaOcrResponseDto> resp = restTemplate.exchange(
+                documentOcrUrl,
+                HttpMethod.POST,
+                entity,
+                ClovaOcrResponseDto.class
+        );
         if (resp.getStatusCode() != HttpStatus.OK || resp.getBody() == null) {
-            throw new RuntimeException("Clova OCR API 호출 실패: HTTP " + resp.getStatusCode());
+            throw new RuntimeException("Clova Document OCR API 호출 실패: HTTP " + resp.getStatusCode());
         }
-
         return resp.getBody();
     }
 
-    /** URL 끝 확장자에서 간단히 포맷을 추출 (jpg/png 등) */
+    /** URL 끝 확장자에서 포맷 추출 (jpg, png, pdf 등) */
     private String detectFormat(String url) {
         String lower = url.toLowerCase();
-        if (lower.endsWith(".png")) return "png";
-        if (lower.endsWith(".gif")) return "gif";
-        // 기본은 jpeg
-        return "jpg";
+        if (lower.endsWith(".png"))  return "png";
+        if (lower.endsWith(".gif"))  return "gif";
+        if (lower.endsWith(".jpeg")) return "jpeg";
+        if (lower.endsWith(".jpg"))  return "jpeg";
+        if (lower.endsWith(".pdf"))  return "pdf";
+        return "jpeg";
     }
 
     // --- request DTO ---
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OcrRequest {
         private String requestId;
         private long timestamp;
-        private String version;           // "V1" 또는 "V2"
+        private String version;
         private List<Image> images;
 
         @Data
+        @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Image {
-            private String format;        // jpg, png, gif
-            private String url;           // public image URL
-            private String name;          // optional
+            private String format;
+            private String name;
+            private String data;
         }
     }
 }

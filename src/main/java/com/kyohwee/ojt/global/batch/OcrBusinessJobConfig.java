@@ -27,8 +27,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableBatchProcessing
@@ -57,7 +60,6 @@ public class OcrBusinessJobConfig {
                     public void beforeStep(StepExecution stepExecution) {
                         log.info("[OCR Step] Starting step: {}", stepExecution.getStepName());
                     }
-
                     @Override
                     public ExitStatus afterStep(StepExecution stepExecution) {
                         log.info("[OCR Step] Completed step: {} with status {}",
@@ -83,9 +85,25 @@ public class OcrBusinessJobConfig {
     public ItemProcessor<BusinessDocumentEntity, BusinessDocumentEntity> ocrItemProcessor() {
         return entity -> {
             ClovaOcrResponseDto dto = ocrService.extractText(entity.getImageUrl());
+            System.out.println("dto.toString() = " + dto.toString());
+            // Document OCR v2의 bizLicense 결과에서 텍스트 추출
             String text = dto.getImages().stream()
-                    .flatMap(img -> img.getFields().stream())
-                    .map(field -> field.getInferText())
+                    .flatMap(imgRes -> {
+                        if (imgRes.getBizLicense() == null || imgRes.getBizLicense().getResult() == null) {
+                            return Stream.<ClovaOcrResponseDto.Field>empty();
+                        }
+                        ClovaOcrResponseDto.Result res = imgRes.getBizLicense().getResult();
+                        return Stream.of(
+                                        res.getCompanyName(),
+                                        res.getRepName(),
+                                        res.getRegisterNumber(),
+                                        res.getOpenDate(),
+                                        res.getIssuanceDate()
+                                )
+                                .filter(Objects::nonNull)
+                                .flatMap(List::stream);
+                    })
+                    .map(ClovaOcrResponseDto.Field::getText)
                     .collect(Collectors.joining(" "));
             entity.setOcrResult(text);
             entity.setOcrProcessed(true);
@@ -111,7 +129,6 @@ public class OcrBusinessJobConfig {
                     public void beforeStep(StepExecution stepExecution) {
                         log.info("[Verify Step] Starting step: {}", stepExecution.getStepName());
                     }
-
                     @Override
                     public ExitStatus afterStep(StepExecution stepExecution) {
                         log.info("[Verify Step] Completed step: {} with status {}",

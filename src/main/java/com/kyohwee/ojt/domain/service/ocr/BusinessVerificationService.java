@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.kyohwee.ojt.domain.dto.BusinessDocument;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.*;
  * 공공데이터포털 “사업자등록증 진위확인(validate)” API에 보내
  * 결과를 돌려받는 서비스.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BusinessVerificationService {
@@ -42,6 +44,7 @@ public class BusinessVerificationService {
         biz.put("start_dt", doc.getStartDate());
         biz.put("p_nm", doc.getOwnerName());
         payload.put("businesses", Collections.singletonList(biz));
+        log.info("b_no : {}, start_dt : {}, p_nm : {}", doc.getBusinessNumber(), doc.getStartDate(), doc.getOwnerName());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

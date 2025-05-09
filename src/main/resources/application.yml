@@ -36,8 +36,9 @@ spring:
 
 clova:
   ocr:
-    url: ${CLOVA_OCR_URL}
-    client-id: ${CLOVA_OCR_CLIENT_SECRET}
+    document-url: ${CLOVA_OCR_URL}
+    client-id : ${CLOVA_OCR_CLIENT_ID}
+    client-secret: ${CLOVA_OCR_CLIENT_SECRET}
 
 openapi:
   business:
