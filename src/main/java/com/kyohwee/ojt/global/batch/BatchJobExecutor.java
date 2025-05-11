@@ -55,23 +55,33 @@ public class BatchJobExecutor {
         log.setExecutedAt(LocalDateTime.now());
 
         try {
-            // Bean 이름: 배치 구성 시 @Bean(name="myJob") 으로 등록한 이름을 일치시켜 주세요.
+            // 1) Job 이름을 @Bean(name="...") 으로 정확히 설정한 뒤 가져옵니다.
             String beanName = batchJob.getName();
             Job job = applicationContext.getBean(beanName, Job.class);
 
-            JobParameters params = new JobParametersBuilder()
-                    .addLong("scheduleId", batchJob.getId())
-                    .addLong("timestamp", System.currentTimeMillis())
+            // 2) Job 실행을 위한 JobParameters 설정
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addLong("jobId", batchJob.getId())
+                    .addLong("timestamp", System.currentTimeMillis()) // 유니크 값
                     .toJobParameters();
 
-            jobLauncher.run(job, params);
+            // 3) Job 실행
+            jobLauncher.run(job, jobParameters);
+
+            // 4) 성공 시 상태 업데이트
             log.setStatus("SUCCESS");
-            log.setResponse("Spring Batch Job '" + beanName + "' executed");
+            log.setResponse("Spring Batch Job '" + beanName + "' executed successfully");
+
         } catch (Exception ex) {
+            // 5) 실패 시 상태 업데이트 및 로그 기록
             log.setStatus("FAIL");
             log.setResponse("Spring Batch execution failed: " + ex.getMessage());
+
+            // 상세 예외 정보 추가
+            ex.printStackTrace();
         }
 
+        // 6) 실행 결과 로그 저장
         logRepository.save(log);
     }
 }

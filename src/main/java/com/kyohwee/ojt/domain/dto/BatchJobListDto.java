@@ -2,6 +2,7 @@ package com.kyohwee.ojt.domain.dto;
 
 import com.kyohwee.ojt.domain.entity.BatchJob;
 import com.kyohwee.ojt.domain.entity.BatchSchedule;
+import com.kyohwee.ojt.global.enums.JobType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,6 +20,9 @@ public class BatchJobListDto {
     private String cronExpression; //cron 표현식
     private Integer repeatIntervalMinutes; //배치 수행 간격
 
+    private JobType jobType;
+    private LocalDateTime  startTime;
+
     public static BatchJobListDto fromEntity(BatchJob batchJob, BatchSchedule batchSchedule) {
         return BatchJobListDto.builder()
                 .batchJobId(batchJob.getId())
@@ -29,6 +33,8 @@ public class BatchJobListDto {
                 .nextExecutionTime(batchSchedule.getNextExecutionTime())
                 .cronExpression(batchSchedule.getCronExpression())
                 .repeatIntervalMinutes(batchSchedule.getRepeatIntervalMinutes())
+                .jobType(batchJob.getJobType())    // 추가
+                .startTime(batchSchedule.getStartTime())
                 .build();
     }
 }

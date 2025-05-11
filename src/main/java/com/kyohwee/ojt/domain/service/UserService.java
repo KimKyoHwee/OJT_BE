@@ -45,4 +45,10 @@ public class UserService {
         response.setUsername(user.getUsername());
         return response;
     }
+
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(GlobalErrorCode.USER_NOT_FOUND));
+    }
+
 }
