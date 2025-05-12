@@ -2,8 +2,13 @@ package com.kyohwee.ojt.global.batch;
 
 import com.kyohwee.ojt.domain.dto.BusinessDocument;
 import com.kyohwee.ojt.domain.dto.ClovaOcrResponseDto;
+import com.kyohwee.ojt.domain.dto.ValidateResponse;
 import com.kyohwee.ojt.domain.entity.BusinessDocumentEntity;
+import com.kyohwee.ojt.domain.entity.OcrResultEntity;
+import com.kyohwee.ojt.domain.entity.VerificationResultEntity;
 import com.kyohwee.ojt.domain.repository.BusinessDocumentRepository;
+import com.kyohwee.ojt.domain.repository.OcrResultEntityRepository;
+import com.kyohwee.ojt.domain.repository.VerificationResultEntityRepository;
 import com.kyohwee.ojt.domain.service.ocr.BusinessVerificationService;
 import com.kyohwee.ojt.domain.service.ocr.ClovaOcrService;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +32,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,6 +53,8 @@ public class OcrBusinessJobConfig {
     private final ClovaOcrService ocrService;
     private final BusinessVerificationService verificationService;
     private final BusinessDocumentRepository documentRepository;
+    private final OcrResultEntityRepository ocrResultRepository;
+    private final VerificationResultEntityRepository verificationResultRepository;
 
     // ── 1) OCR 추출 Step ───────────────────────────────────────────
     @Bean
@@ -84,28 +93,43 @@ public class OcrBusinessJobConfig {
     @Bean
     public ItemProcessor<BusinessDocumentEntity, BusinessDocumentEntity> ocrItemProcessor() {
         return entity -> {
+            // 1) OCR 호출하고, 첫 번째 이미지 응답·결과 꺼내기
             ClovaOcrResponseDto dto = ocrService.extractText(entity.getImageUrl());
-            System.out.println("dto.toString() = " + dto.toString());
-            // Document OCR v2의 bizLicense 결과에서 텍스트 추출
-            String text = dto.getImages().stream()
-                    .flatMap(imgRes -> {
-                        if (imgRes.getBizLicense() == null || imgRes.getBizLicense().getResult() == null) {
+            ClovaOcrResponseDto.ImageResponse mainImageResponse = dto.getImages().get(0);
+            ClovaOcrResponseDto.Result    mainResult        = mainImageResponse.getBizLicense().getResult();
+
+            // 2) OcrResultEntity 채우기
+            OcrResultEntity ocr = OcrResultEntity.from(dto);
+            ocrResultRepository.save(ocr);
+            entity.setOcrResultEntity(ocr);
+
+
+            // 3) 전체 텍스트 조합 (예: companyName, repName, registerNumber, openDate, issuanceDate)
+            String aggregatedText = dto.getImages().stream()
+                    .flatMap(imageResp -> {
+                        if (imageResp.getBizLicense() == null
+                                || imageResp.getBizLicense().getResult() == null) {
                             return Stream.<ClovaOcrResponseDto.Field>empty();
                         }
-                        ClovaOcrResponseDto.Result res = imgRes.getBizLicense().getResult();
+                        ClovaOcrResponseDto.Result r = imageResp.getBizLicense().getResult();
                         return Stream.of(
-                                        res.getCompanyName(),
-                                        res.getRepName(),
-                                        res.getRegisterNumber(),
-                                        res.getOpenDate(),
-                                        res.getIssuanceDate()
+                                        r.getCompanyName(),
+                                        r.getRepName(),
+                                        r.getRegisterNumber(),
+                                        r.getOpenDate(),
+                                        r.getIssuanceDate()
                                 )
                                 .filter(Objects::nonNull)
                                 .flatMap(List::stream);
                     })
                     .map(ClovaOcrResponseDto.Field::getText)
                     .collect(Collectors.joining(" "));
-            entity.setOcrResult(text);
+
+            // (선택) aggregatedText 를 OcrResultEntity 에 저장하도록 메서드가 있다면 호출
+            // ocr.setAggregatedText(aggregatedText);
+
+            // 4) 1:1 매핑하고 프로세스 완료 표시
+            entity.setOcrResult(aggregatedText);
             entity.setOcrProcessed(true);
             return entity;
         };
@@ -153,16 +177,55 @@ public class OcrBusinessJobConfig {
     @Bean
     public ItemProcessor<BusinessDocumentEntity, BusinessDocumentEntity> verifyItemProcessor() {
         return entity -> {
-            BusinessDocument doc = new BusinessDocument();
-            doc.setId(entity.getId());
-            doc.setImageUrl(entity.getImageUrl());
-            doc.setOcrResult(entity.getOcrResult());
-            String status = verificationService.checkBusiness(doc);
-            entity.setVerificationStatus(status);
-            entity.setVerificationMessage(doc.getVerificationMessage());
-            entity.setVerified(true);
-            entity.setSuccess("01".equals(status));
-            return entity;
+            log.info("[Verify] 시작: documentId={}", entity.getId());
+            try {
+                // 1) OCR 결과 조회
+                log.info("[Verify] OCR 결과 조회 시도: imageUrl={}", entity.getImageUrl());
+                OcrResultEntity ocr = entity.getOcrResultEntity();
+                if (ocr == null) {
+                    throw new IllegalStateException("[Verify][ERROR] OCR 결과가 없습니다: documentId=" + entity.getId());
+                }
+                log.info("[Verify] OCR 결과 로드 완료: registerNumber={}, openDate={}, repName={}",
+                        ocr.getRegisterNumber(), ocr.getOpenDate(), ocr.getRepName());
+
+                // 2) BusinessDocument DTO 세팅
+                BusinessDocument doc = new BusinessDocument();
+                doc.setId(entity.getId());
+                doc.setBusinessNumber(ocr.getRegisterNumber());
+                doc.setStartDate(ocr.getOpenDate());
+                doc.setOwnerName(ocr.getRepName());
+                log.info("[Verify] BusinessDocument 준비: b_no={}, start_dt={}, p_nm={}",
+                        doc.getBusinessNumber(), doc.getStartDate(), doc.getOwnerName());
+
+                // 3) 진위확인 API 호출
+                log.info("[Verify] 진위확인 API 호출 전");
+                ValidateResponse.BusinessData data = verificationService.checkBusiness(doc);
+                String status = data != null ? data.getValid() : null;
+                log.info("[Verify] 진위확인 API 호출 후: status={}, message={}",
+                        status, doc.getVerificationMessage());
+
+                // 4) Entity에 결과 반영
+                entity.setVerificationStatus(status);
+                entity.setVerificationMessage(doc.getVerificationMessage());
+                boolean isValid = "01".equals(status);  //01 status값이 와야 정상
+                entity.setVerified(isValid);
+                entity.setSuccess(isValid);
+                log.info("[Verify] Entity 반영 완료: verified={}, success={}",
+                        entity.isVerified(), entity.isSuccess());
+
+                // 5) VerificationResultEntity 생성·저장 후 연관 설정
+                if (data != null && data.getStatus() != null) {
+                    VerificationResultEntity vr = VerificationResultEntity.from(data);
+                    vr = verificationResultRepository.save(vr);
+                    entity.setVerificationResultEntity(vr);
+                    log.info("[Verify] VerificationResultEntity 저장 완료: id={}", vr.getId());
+                }
+
+                return entity;
+            } catch (Exception ex) {
+                log.error("[Verify][Exception] documentId={} 처리 중 오류 발생", entity.getId(), ex);
+                throw ex;
+            }
         };
     }
 
