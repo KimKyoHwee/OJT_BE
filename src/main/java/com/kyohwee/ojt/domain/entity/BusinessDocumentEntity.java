@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class BusinessDocumentEntity {
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ocr_result_id")
+    private OcrResultEntity ocrResultEntity;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
