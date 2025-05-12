@@ -2,10 +2,13 @@ package com.kyohwee.ojt.global.batch;
 
 import com.kyohwee.ojt.domain.dto.BusinessDocument;
 import com.kyohwee.ojt.domain.dto.ClovaOcrResponseDto;
+import com.kyohwee.ojt.domain.dto.ValidateResponse;
 import com.kyohwee.ojt.domain.entity.BusinessDocumentEntity;
 import com.kyohwee.ojt.domain.entity.OcrResultEntity;
+import com.kyohwee.ojt.domain.entity.VerificationResultEntity;
 import com.kyohwee.ojt.domain.repository.BusinessDocumentRepository;
 import com.kyohwee.ojt.domain.repository.OcrResultEntityRepository;
+import com.kyohwee.ojt.domain.repository.VerificationResultEntityRepository;
 import com.kyohwee.ojt.domain.service.ocr.BusinessVerificationService;
 import com.kyohwee.ojt.domain.service.ocr.ClovaOcrService;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +54,7 @@ public class OcrBusinessJobConfig {
     private final BusinessVerificationService verificationService;
     private final BusinessDocumentRepository documentRepository;
     private final OcrResultEntityRepository ocrResultRepository;
+    private final VerificationResultEntityRepository verificationResultRepository;
 
     // ── 1) OCR 추출 Step ───────────────────────────────────────────
     @Bean
@@ -97,6 +101,7 @@ public class OcrBusinessJobConfig {
             // 2) OcrResultEntity 채우기
             OcrResultEntity ocr = OcrResultEntity.from(dto);
             ocrResultRepository.save(ocr);
+            entity.setOcrResultEntity(ocr);
 
 
             // 3) 전체 텍스트 조합 (예: companyName, repName, registerNumber, openDate, issuanceDate)
@@ -126,44 +131,9 @@ public class OcrBusinessJobConfig {
             // 4) 1:1 매핑하고 프로세스 완료 표시
             entity.setOcrResult(aggregatedText);
             entity.setOcrProcessed(true);
-            entity.setOcrResultEntity(ocr); // OCR 결과를 Entity에 저장
             return entity;
         };
     }
-
-
-    /*
-    @Bean
-    public ItemProcessor<BusinessDocumentEntity, BusinessDocumentEntity> ocrItemProcessor() {
-        return entity -> {
-            ClovaOcrResponseDto dto = ocrService.extractText(entity.getImageUrl());
-            System.out.println("dto.toString() = " + dto.toString());
-            // Document OCR v2의 bizLicense 결과에서 텍스트 추출
-            String text = dto.getImages().stream()
-                    .flatMap(imgRes -> {
-                        if (imgRes.getBizLicense() == null || imgRes.getBizLicense().getResult() == null) {
-                            return Stream.<ClovaOcrResponseDto.Field>empty();
-                        }
-                        ClovaOcrResponseDto.Result res = imgRes.getBizLicense().getResult();
-                        return Stream.of(
-                                        res.getCompanyName(),
-                                        res.getRepName(),
-                                        res.getRegisterNumber(),
-                                        res.getOpenDate(),
-                                        res.getIssuanceDate()
-                                )
-                                .filter(Objects::nonNull)
-                                .flatMap(List::stream);
-                    })
-                    .map(ClovaOcrResponseDto.Field::getText)
-                    .collect(Collectors.joining(" "));
-            entity.setOcrResult(text);
-            entity.setOcrProcessed(true);
-            return entity;
-        };
-    }
-
-     */
 
     @Bean
     public ItemWriter<BusinessDocumentEntity> ocrItemWriter() {
@@ -209,7 +179,7 @@ public class OcrBusinessJobConfig {
         return entity -> {
             log.info("[Verify] 시작: documentId={}", entity.getId());
             try {
-                // 1) OCR 결과 테이블에서 해당 문서의 결과를 조회
+                // 1) OCR 결과 조회
                 log.info("[Verify] OCR 결과 조회 시도: imageUrl={}", entity.getImageUrl());
                 OcrResultEntity ocr = entity.getOcrResultEntity();
                 if (ocr == null) {
@@ -218,7 +188,7 @@ public class OcrBusinessJobConfig {
                 log.info("[Verify] OCR 결과 로드 완료: registerNumber={}, openDate={}, repName={}",
                         ocr.getRegisterNumber(), ocr.getOpenDate(), ocr.getRepName());
 
-                // 2) BusinessDocument DTO에 OCR 필드 세팅
+                // 2) BusinessDocument DTO 세팅
                 BusinessDocument doc = new BusinessDocument();
                 doc.setId(entity.getId());
                 doc.setBusinessNumber(ocr.getRegisterNumber());
@@ -229,17 +199,27 @@ public class OcrBusinessJobConfig {
 
                 // 3) 진위확인 API 호출
                 log.info("[Verify] 진위확인 API 호출 전");
-                String status = verificationService.checkBusiness(doc);
+                ValidateResponse.BusinessData data = verificationService.checkBusiness(doc);
+                String status = data != null ? data.getValid() : null;
                 log.info("[Verify] 진위확인 API 호출 후: status={}, message={}",
                         status, doc.getVerificationMessage());
 
                 // 4) Entity에 결과 반영
                 entity.setVerificationStatus(status);
                 entity.setVerificationMessage(doc.getVerificationMessage());
-                entity.setVerified(true);
-                entity.setSuccess("01".equals(status));
+                boolean isValid = "01".equals(status);  //01 status값이 와야 정상
+                entity.setVerified(isValid);
+                entity.setSuccess(isValid);
                 log.info("[Verify] Entity 반영 완료: verified={}, success={}",
                         entity.isVerified(), entity.isSuccess());
+
+                // 5) VerificationResultEntity 생성·저장 후 연관 설정
+                if (data != null && data.getStatus() != null) {
+                    VerificationResultEntity vr = VerificationResultEntity.from(data);
+                    vr = verificationResultRepository.save(vr);
+                    entity.setVerificationResultEntity(vr);
+                    log.info("[Verify] VerificationResultEntity 저장 완료: id={}", vr.getId());
+                }
 
                 return entity;
             } catch (Exception ex) {
@@ -248,8 +228,6 @@ public class OcrBusinessJobConfig {
             }
         };
     }
-
-
 
     @Bean
     public ItemWriter<BusinessDocumentEntity> verifyItemWriter() {
