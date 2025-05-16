@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 /**
  * 배치 작업 정보를 저장하는 엔티티
  */
+@Table(name="quartz_jobDetails")
 @Entity
 @Getter
 @Setter

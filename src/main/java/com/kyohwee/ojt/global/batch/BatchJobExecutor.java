@@ -35,11 +35,12 @@ public class BatchJobExecutor {
         log.setExecutedAt(LocalDateTime.now());
 
         try {
-            ResponseEntity<String> resp = restTemplate.postForEntity(job.getEndpointUrl(), null, String.class);
-            log.setStatus("SUCCESS");
+            ResponseEntity<String> resp = restTemplate.getForEntity(job.getEndpointUrl(), String.class);
+            log.setStatus("[REST TEST] SUCCESS");
             log.setResponse(resp.getBody());
         } catch (Exception ex) {
-            log.setStatus("FAIL");
+
+            log.setStatus("[REST TEST] FAIL");
             log.setResponse(ex.getMessage());
         }
 
@@ -55,7 +56,7 @@ public class BatchJobExecutor {
         log.setExecutedAt(LocalDateTime.now());
 
         try {
-            // 1) Job 이름을 @Bean(name="...") 으로 정확히 설정한 뒤 가져옵니다.
+            // 1) Bean에 등록된 Job 가져오기
             String beanName = batchJob.getName();
             Job job = applicationContext.getBean(beanName, Job.class);
 

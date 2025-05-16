@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Getter @Setter
+@Table(name="quartz_triggers")
 public class BatchSchedule {
     @Id @GeneratedValue
     private Long id;
